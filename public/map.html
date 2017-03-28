@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Smena Map</title>
+    <!--bootstrap,jquery,tether-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
+            integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
+            integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+            integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+            crossorigin="anonymous"></script>
+    <!--my css-->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+<nav class="navbar navbar-toggleable-md  navbar-inverse bg-inverse">
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
+            data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false"
+            aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <a class="navbar-brand" href="/">Smena Map <span class="badge badge-pill badge-default">Beta</span></a>
+
+    <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+        <ul class="navbar-nav mr-auto mt-2 mt-md-0">
+            <li class="nav-item">
+                <a class="nav-link active" href="/map">Map</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/add">Add Me</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div id="map"></div>
+<!--firebase-->
+<script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+<script>
+    // Initialize Firebase
+    var config = {
+        apiKey: "AIzaSyDFyV4isvs0tAf7NG5e_uWooFoFAMKYm2g",
+        authDomain: "smena-map.firebaseapp.com",
+        databaseURL: "https://smena-map.firebaseio.com",
+        storageBucket: "smena-map.appspot.com",
+        messagingSenderId: "272317849061"
+    };
+    firebase.initializeApp(config);
+
+    var peopleArray = [];
+    firebase.database().ref('/people').once('value')
+        .then(function (snapshot) {
+
+            snapshot.forEach(function (childSnapshot) {
+
+                var person = {
+                    location: {
+                        lat: childSnapshot.child('lat').val(),
+                        lng: childSnapshot.child('lng').val()
+                    },
+                    name: childSnapshot.child("name").val()
+                };
+                peopleArray.push(person);
+
+            });
+        })
+        .then(function () {
+            initMap()
+        });
+
+</script>
+<!--google map-->
+<script>
+    function initMap() {
+        var infowindows = [];
+        var markers = [];
+        var map;
+        // MARKER IMAGE
+        var houseIcon = {
+            url: "/images/beach-house-icon.png", // url
+            scaledSize: new google.maps.Size(50, 50)
+        };
+        var smileIcon = {
+            url: "/images/smile.png", // url
+            scaledSize: new google.maps.Size(50, 50)
+        };
+        var smenaLocations = [{lat: 5.9924469, lng: 80.4246238}];
+        var smenaDescriptions = ['<p>Smena Sri Lanka</p>'];
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 30.9924469, lng: 50.4246238},
+            zoom: 3
+        });
+
+        //            LOOP FOR ADDING MARKERS
+        var infowindow = new google.maps.InfoWindow();
+        // set Smena Locations
+        for (var i = 0; i < smenaLocations.length; i++) {
+
+            var marker = new google.maps.Marker({
+                position: smenaLocations[i],
+                map: map,
+                icon: houseIcon
+            });
+
+            var contentString = smenaDescriptions[i];
+
+            google.maps.event.addListener(marker, 'click', (function (marker, contentString) {
+                return function () {
+                    infowindow.setContent(contentString);
+                    infowindow.open(map, marker);
+                    infowindows.push(infowindow);
+                }
+            })(marker, contentString));
+        }
+        // set People Locations
+        for (var i = 0; i < window.peopleArray.length; i++) {
+
+            var marker = new google.maps.Marker({
+                position: window.peopleArray[i].location,
+                map: map,
+                icon: smileIcon
+            });
+
+            var contentString = '<p>' + window.peopleArray[i].name + '</p>';
+
+            google.maps.event.addListener(marker, 'click', (function (marker, contentString) {
+                return function () {
+                    infowindow.setContent(contentString);
+                    infowindow.open(map, marker);
+                    infowindows.push(infowindow);
+                }
+            })(marker, contentString));
+        }
+        google.maps.event.addListener(map, "click", function (event) {
+            for (var i = 0; i < infowindows.length; i++) {
+                infowindows[i].close();
+            }
+        });
+    }
+
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDs_h29B7_8XAcnQ0fSzETaYDqG0nZF5IQ" async defer></script>
+</body>
+</html>

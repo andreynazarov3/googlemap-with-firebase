@@ -1,0 +1,9 @@
+html,body {
+    height:100%;
+}
+#map {
+    height: calc(100% - 56px);
+}
+.alert {
+    display:none;
+}
